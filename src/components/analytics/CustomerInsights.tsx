@@ -13,7 +13,7 @@ const CustomerInsights = () => {
     queryKey: ['customers-data'],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from('customers')
+        .from('dim_customer')
         .select('*');
 
       if (error) throw error;
@@ -26,25 +26,24 @@ const CustomerInsights = () => {
     queryKey: ['customer-segments'],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from('sales_fact')
+        .from('fact_transactions')
         .select(`
-          total_amount,
-          customers(customer_segment)
+          revenue_nok,
+          dim_customer(acquisition_channel)
         `);
 
       if (error) throw error;
 
-      // Group by segment
-      const segmentStats = data.reduce((acc: any, sale: any) => {
-        const segment = sale.customers?.customer_segment || 'Unknown';
-        if (!acc[segment]) {
-          acc[segment] = {
-            segment,
-            sales: 0,
-            customers: new Set()
+      // Group by acquisition channel
+      const segmentStats = data.reduce((acc: any, transaction: any) => {
+        const channel = transaction.dim_customer?.acquisition_channel || 'Unknown';
+        if (!acc[channel]) {
+          acc[channel] = {
+            segment: channel,
+            sales: 0
           };
         }
-        acc[segment].sales += parseFloat(sale.total_amount || 0);
+        acc[channel].sales += parseFloat(transaction.revenue_nok || 0);
         return acc;
       }, {});
 
@@ -57,25 +56,25 @@ const CustomerInsights = () => {
     queryKey: ['customer-geography'],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from('customers')
-        .select('state');
+        .from('dim_customer')
+        .select('region');
 
       if (error) throw error;
 
-      // Group by state
-      const stateStats = data.reduce((acc: any, customer: any) => {
-        const state = customer.state || 'Unknown';
-        if (!acc[state]) {
-          acc[state] = {
-            state,
+      // Group by region
+      const regionStats = data.reduce((acc: any, customer: any) => {
+        const region = customer.region || 'Unknown';
+        if (!acc[region]) {
+          acc[region] = {
+            region,
             count: 0
           };
         }
-        acc[state].count += 1;
+        acc[region].count += 1;
         return acc;
       }, {});
 
-      return Object.values(stateStats);
+      return Object.values(regionStats);
     }
   });
 
@@ -100,28 +99,28 @@ const CustomerInsights = () => {
         </Card>
         <Card>
           <CardHeader>
-            <CardTitle>Segments</CardTitle>
+            <CardTitle>Acquisition Channels</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-3xl font-bold">{new Set(customers?.map(c => c.customer_segment)).size || 0}</div>
+            <div className="text-3xl font-bold">{new Set(customers?.map(c => c.acquisition_channel)).size || 0}</div>
           </CardContent>
         </Card>
         <Card>
           <CardHeader>
-            <CardTitle>States</CardTitle>
+            <CardTitle>Regions</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-3xl font-bold">{new Set(customers?.map(c => c.state)).size || 0}</div>
+            <div className="text-3xl font-bold">{new Set(customers?.map(c => c.region)).size || 0}</div>
           </CardContent>
         </Card>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Customer Segments */}
+        {/* Customer Acquisition Channels */}
         <Card>
           <CardHeader>
-            <CardTitle>Customer Segments</CardTitle>
-            <CardDescription>Revenue by customer segment</CardDescription>
+            <CardTitle>Revenue by Acquisition Channel</CardTitle>
+            <CardDescription>Revenue by customer acquisition channel</CardDescription>
           </CardHeader>
           <CardContent>
             <ResponsiveContainer width="100%" height={300}>
@@ -150,13 +149,13 @@ const CustomerInsights = () => {
         <Card>
           <CardHeader>
             <CardTitle>Geographic Distribution</CardTitle>
-            <CardDescription>Customers by state</CardDescription>
+            <CardDescription>Customers by region</CardDescription>
           </CardHeader>
           <CardContent>
             <ResponsiveContainer width="100%" height={300}>
               <BarChart data={geoData}>
                 <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="state" />
+                <XAxis dataKey="region" />
                 <YAxis />
                 <Tooltip />
                 <Bar dataKey="count" fill="#82ca9d" />
@@ -176,29 +175,31 @@ const CustomerInsights = () => {
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b">
-                  <th className="text-left p-2">Customer Name</th>
-                  <th className="text-left p-2">Email</th>
-                  <th className="text-left p-2">Segment</th>
-                  <th className="text-left p-2">Location</th>
-                  <th className="text-left p-2">Registration Date</th>
+                  <th className="text-left p-2">Customer ID</th>
+                  <th className="text-left p-2">Acquisition Channel</th>
+                  <th className="text-left p-2">Gender</th>
+                  <th className="text-left p-2">Age Band</th>
+                  <th className="text-left p-2">Region</th>
+                  <th className="text-left p-2">Signup Date</th>
                 </tr>
               </thead>
               <tbody>
                 {customers?.map((customer: any) => (
                   <tr key={customer.customer_id} className="border-b">
-                    <td className="p-2 font-medium">{customer.customer_name}</td>
-                    <td className="p-2">{customer.email}</td>
+                    <td className="p-2 font-medium">{customer.customer_id}</td>
+                    <td className="p-2">{customer.acquisition_channel}</td>
+                    <td className="p-2">{customer.gender}</td>
                     <td className="p-2">
                       <span className={`px-2 py-1 rounded-full text-xs ${
-                        customer.customer_segment === 'VIP' ? 'bg-purple-100 text-purple-800' :
-                        customer.customer_segment === 'Premium' ? 'bg-blue-100 text-blue-800' :
+                        customer.age_band === '25-34' ? 'bg-purple-100 text-purple-800' :
+                        customer.age_band === '35-44' ? 'bg-blue-100 text-blue-800' :
                         'bg-gray-100 text-gray-800'
                       }`}>
-                        {customer.customer_segment}
+                        {customer.age_band}
                       </span>
                     </td>
-                    <td className="p-2">{customer.city}, {customer.state}</td>
-                    <td className="p-2">{new Date(customer.registration_date).toLocaleDateString()}</td>
+                    <td className="p-2">{customer.region}</td>
+                    <td className="p-2">{new Date(customer.signup_date).toLocaleDateString()}</td>
                   </tr>
                 ))}
               </tbody>

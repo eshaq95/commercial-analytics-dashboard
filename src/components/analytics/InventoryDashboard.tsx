@@ -11,12 +11,12 @@ const InventoryDashboard = () => {
     queryKey: ['inventory-data'],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from('inventory_fact')
+        .from('fact_inventory_daily')
         .select(`
           *,
-          products(product_name, category),
-          geography(city, state)
-        `);
+          dim_product(product_name, category, price_nok)
+        `)
+        .order('inventory_date', { ascending: false });
 
       if (error) throw error;
       return data;
@@ -25,14 +25,14 @@ const InventoryDashboard = () => {
 
   // Calculate inventory metrics
   const inventoryMetrics = inventory ? {
-    totalValue: inventory.reduce((sum, item) => sum + (item.stock_value || 0), 0),
-    totalQuantity: inventory.reduce((sum, item) => sum + (item.stock_quantity || 0), 0),
-    lowStockItems: inventory.filter(item => item.stock_quantity <= item.reorder_level).length
-  } : { totalValue: 0, totalQuantity: 0, lowStockItems: 0 };
+    totalQuantity: inventory.reduce((sum, item) => sum + (item.stock_level || 0), 0),
+    totalValue: inventory.reduce((sum, item) => sum + ((item.stock_level || 0) * (item.dim_product?.price_nok || 0)), 0),
+    lowStockItems: inventory.filter(item => item.stock_level <= 10).length
+  } : { totalQuantity: 0, totalValue: 0, lowStockItems: 0 };
 
   // Group inventory by category
   const categoryInventory = inventory ? inventory.reduce((acc: any, item: any) => {
-    const category = item.products?.category || 'Unknown';
+    const category = item.dim_product?.category || 'Unknown';
     if (!acc[category]) {
       acc[category] = {
         category,
@@ -41,8 +41,8 @@ const InventoryDashboard = () => {
         items: 0
       };
     }
-    acc[category].quantity += item.stock_quantity || 0;
-    acc[category].value += item.stock_value || 0;
+    acc[category].quantity += item.stock_level || 0;
+    acc[category].value += (item.stock_level || 0) * (item.dim_product?.price_nok || 0);
     acc[category].items += 1;
     return acc;
   }, {}) : {};
@@ -65,7 +65,7 @@ const InventoryDashboard = () => {
             <CardTitle>Total Inventory Value</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-3xl font-bold">${inventoryMetrics.totalValue.toLocaleString()}</div>
+            <div className="text-3xl font-bold">{inventoryMetrics.totalValue.toLocaleString()} NOK</div>
           </CardContent>
         </Card>
         <Card>
@@ -102,7 +102,7 @@ const InventoryDashboard = () => {
               <Tooltip />
               <Legend />
               <Bar dataKey="quantity" fill="#8884d8" name="Quantity" />
-              <Bar dataKey="value" fill="#82ca9d" name="Value ($)" />
+              <Bar dataKey="value" fill="#82ca9d" name="Value (NOK)" />
             </BarChart>
           </ResponsiveContainer>
         </CardContent>
@@ -119,23 +119,24 @@ const InventoryDashboard = () => {
               <thead>
                 <tr className="border-b">
                   <th className="text-left p-2">Product</th>
-                  <th className="text-left p-2">Location</th>
-                  <th className="text-right p-2">Stock Qty</th>
-                  <th className="text-right p-2">Reorder Level</th>
-                  <th className="text-right p-2">Stock Value</th>
+                  <th className="text-left p-2">Category</th>
+                  <th className="text-right p-2">Stock Level</th>
+                  <th className="text-right p-2">Unit Price (NOK)</th>
+                  <th className="text-right p-2">Total Value (NOK)</th>
                   <th className="text-center p-2">Status</th>
                 </tr>
               </thead>
               <tbody>
-                {inventory?.map((item: any) => {
-                  const isLowStock = item.stock_quantity <= item.reorder_level;
+                {inventory?.map((item: any, index: number) => {
+                  const isLowStock = item.stock_level <= 10;
+                  const totalValue = (item.stock_level || 0) * (item.dim_product?.price_nok || 0);
                   return (
-                    <tr key={item.inventory_id} className="border-b">
-                      <td className="p-2 font-medium">{item.products?.product_name || 'Unknown'}</td>
-                      <td className="p-2">{item.geography?.city}, {item.geography?.state}</td>
-                      <td className="p-2 text-right">{item.stock_quantity}</td>
-                      <td className="p-2 text-right">{item.reorder_level}</td>
-                      <td className="p-2 text-right">${item.stock_value?.toLocaleString()}</td>
+                    <tr key={index} className="border-b">
+                      <td className="p-2 font-medium">{item.dim_product?.product_name || 'Unknown'}</td>
+                      <td className="p-2">{item.dim_product?.category || 'Unknown'}</td>
+                      <td className="p-2 text-right">{item.stock_level}</td>
+                      <td className="p-2 text-right">{item.dim_product?.price_nok}</td>
+                      <td className="p-2 text-right">{totalValue.toLocaleString()}</td>
                       <td className="p-2 text-center">
                         <span className={`px-2 py-1 rounded-full text-xs ${
                           isLowStock ? 'bg-red-100 text-red-800' : 'bg-green-100 text-green-800'

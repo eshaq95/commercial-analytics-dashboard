@@ -11,32 +11,26 @@ const SalesOverview = () => {
     queryKey: ['sales-overview'],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from('sales_fact')
-        .select(`
-          total_amount,
-          quantity,
-          profit,
-          time_dim(month, month_name)
-        `)
-        .order('date_id');
+        .from('fact_transactions')
+        .select('*')
+        .order('date');
 
       if (error) throw error;
 
       // Group by month
-      const monthlyData = data.reduce((acc: any, sale: any) => {
-        const month = sale.time_dim?.month_name || 'Unknown';
+      const monthlyData = data.reduce((acc: any, transaction: any) => {
+        const date = new Date(transaction.date);
+        const month = date.toLocaleString('default', { month: 'long' });
         if (!acc[month]) {
           acc[month] = {
             month,
             sales: 0,
             quantity: 0,
-            profit: 0,
             orders: 0
           };
         }
-        acc[month].sales += parseFloat(sale.total_amount || 0);
-        acc[month].quantity += parseInt(sale.quantity || 0);
-        acc[month].profit += parseFloat(sale.profit || 0);
+        acc[month].sales += parseFloat(transaction.revenue_nok || 0);
+        acc[month].quantity += parseInt(transaction.quantity || 0);
         acc[month].orders += 1;
         return acc;
       }, {});
@@ -50,20 +44,19 @@ const SalesOverview = () => {
     queryKey: ['top-products'],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from('sales_fact')
+        .from('fact_transactions')
         .select(`
-          total_amount,
+          revenue_nok,
           quantity,
-          products(product_name)
+          dim_product(product_name)
         `)
-        .order('total_amount', { ascending: false })
-        .limit(5);
+        .order('revenue_nok', { ascending: false });
 
       if (error) throw error;
 
       // Group by product
-      const productData = data.reduce((acc: any, sale: any) => {
-        const productName = sale.products?.product_name || 'Unknown';
+      const productData = data.reduce((acc: any, transaction: any) => {
+        const productName = transaction.dim_product?.product_name || 'Unknown';
         if (!acc[productName]) {
           acc[productName] = {
             product: productName,
@@ -71,12 +64,12 @@ const SalesOverview = () => {
             quantity: 0
           };
         }
-        acc[productName].sales += parseFloat(sale.total_amount || 0);
-        acc[productName].quantity += parseInt(sale.quantity || 0);
+        acc[productName].sales += parseFloat(transaction.revenue_nok || 0);
+        acc[productName].quantity += parseInt(transaction.quantity || 0);
         return acc;
       }, {});
 
-      return Object.values(productData);
+      return Object.values(productData).slice(0, 5);
     }
   });
 
@@ -151,7 +144,6 @@ const SalesOverview = () => {
                   <th className="text-right p-2">Sales</th>
                   <th className="text-right p-2">Orders</th>
                   <th className="text-right p-2">Quantity</th>
-                  <th className="text-right p-2">Profit</th>
                 </tr>
               </thead>
               <tbody>
@@ -161,7 +153,6 @@ const SalesOverview = () => {
                     <td className="p-2 text-right">${row.sales.toLocaleString()}</td>
                     <td className="p-2 text-right">{row.orders}</td>
                     <td className="p-2 text-right">{row.quantity}</td>
-                    <td className="p-2 text-right">${row.profit.toLocaleString()}</td>
                   </tr>
                 ))}
               </tbody>
