@@ -9,231 +9,159 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
-      dim_campaign: {
+      campaigns: {
         Row: {
           campaign_id: number
           campaign_name: string
-          discount_pct: number | null
+          discount_pct: number
           end_date: string
-          marketing_spend_nok: number | null
+          marketing_cost: number
           start_date: string
         }
         Insert: {
-          campaign_id?: number
+          campaign_id: number
           campaign_name: string
-          discount_pct?: number | null
+          discount_pct: number
           end_date: string
-          marketing_spend_nok?: number | null
+          marketing_cost: number
           start_date: string
         }
         Update: {
           campaign_id?: number
           campaign_name?: string
-          discount_pct?: number | null
+          discount_pct?: number
           end_date?: string
-          marketing_spend_nok?: number | null
+          marketing_cost?: number
           start_date?: string
         }
         Relationships: []
       }
-      dim_customer: {
+      customers: {
         Row: {
-          acquisition_channel: string | null
-          age_band: string | null
+          churn_date: string | null
+          country: string
           customer_id: number
-          gender: string | null
-          region: string | null
+          is_active: boolean
           signup_date: string
+          subscription_start: string | null
         }
         Insert: {
-          acquisition_channel?: string | null
-          age_band?: string | null
+          churn_date?: string | null
+          country: string
           customer_id: number
-          gender?: string | null
-          region?: string | null
+          is_active: boolean
           signup_date: string
+          subscription_start?: string | null
         }
         Update: {
-          acquisition_channel?: string | null
-          age_band?: string | null
+          churn_date?: string | null
+          country?: string
           customer_id?: number
-          gender?: string | null
-          region?: string | null
+          is_active?: boolean
           signup_date?: string
+          subscription_start?: string | null
         }
         Relationships: []
       }
-      dim_product: {
+      products: {
         Row: {
-          brand_line: string | null
-          category: string | null
-          cogs_unit_nok: number | null
-          launch_date: string | null
-          price_nok: number | null
+          base_price: number
           product_id: number
           product_name: string
         }
         Insert: {
-          brand_line?: string | null
-          category?: string | null
-          cogs_unit_nok?: number | null
-          launch_date?: string | null
-          price_nok?: number | null
-          product_id?: number
+          base_price: number
+          product_id: number
           product_name: string
         }
         Update: {
-          brand_line?: string | null
-          category?: string | null
-          cogs_unit_nok?: number | null
-          launch_date?: string | null
-          price_nok?: number | null
+          base_price?: number
           product_id?: number
           product_name?: string
         }
         Relationships: []
       }
-      fact_cogs: {
+      subscription_kpis: {
         Row: {
-          cogs_date: string
-          cogs_nok: number | null
-          product_id: number
+          active_subscribers: number
+          churn_rate: number
+          churned_subscribers: number
+          month: string
+          mrr: number
+          new_subscribers: number
         }
         Insert: {
-          cogs_date: string
-          cogs_nok?: number | null
-          product_id: number
+          active_subscribers: number
+          churn_rate: number
+          churned_subscribers: number
+          month: string
+          mrr: number
+          new_subscribers: number
         }
         Update: {
-          cogs_date?: string
-          cogs_nok?: number | null
-          product_id?: number
+          active_subscribers?: number
+          churn_rate?: number
+          churned_subscribers?: number
+          month?: string
+          mrr?: number
+          new_subscribers?: number
         }
-        Relationships: [
-          {
-            foreignKeyName: "fact_cogs_product_id_fkey"
-            columns: ["product_id"]
-            isOneToOne: false
-            referencedRelation: "dim_product"
-            referencedColumns: ["product_id"]
-          },
-        ]
+        Relationships: []
       }
-      fact_inventory_daily: {
-        Row: {
-          inventory_date: string
-          product_id: number
-          stock_level: number | null
-        }
-        Insert: {
-          inventory_date: string
-          product_id: number
-          stock_level?: number | null
-        }
-        Update: {
-          inventory_date?: string
-          product_id?: number
-          stock_level?: number | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "fact_inventory_daily_product_id_fkey"
-            columns: ["product_id"]
-            isOneToOne: false
-            referencedRelation: "dim_product"
-            referencedColumns: ["product_id"]
-          },
-        ]
-      }
-      fact_returns: {
-        Row: {
-          order_id: string
-          reason_code: string | null
-          refund_amount_nok: number | null
-          return_date: string | null
-          return_id: string
-        }
-        Insert: {
-          order_id: string
-          reason_code?: string | null
-          refund_amount_nok?: number | null
-          return_date?: string | null
-          return_id: string
-        }
-        Update: {
-          order_id?: string
-          reason_code?: string | null
-          refund_amount_nok?: number | null
-          return_date?: string | null
-          return_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "fact_returns_order_id_fkey"
-            columns: ["order_id"]
-            isOneToOne: false
-            referencedRelation: "fact_transactions"
-            referencedColumns: ["order_id"]
-          },
-        ]
-      }
-      fact_transactions: {
+      transactions: {
         Row: {
           campaign_id: number | null
           customer_id: number
           date: string
-          discount_pct: number | null
-          order_id: string
+          price: number
           product_id: number
-          quantity: number | null
-          revenue_nok: number | null
-          sale_type: string | null
-          unit_price: number | null
+          quantity: number
+          revenue: number
+          subscription_flag: boolean
+          transaction_id: number
         }
         Insert: {
           campaign_id?: number | null
           customer_id: number
           date: string
-          discount_pct?: number | null
-          order_id: string
+          price: number
           product_id: number
-          quantity?: number | null
-          revenue_nok?: number | null
-          sale_type?: string | null
-          unit_price?: number | null
+          quantity: number
+          revenue: number
+          subscription_flag: boolean
+          transaction_id: number
         }
         Update: {
           campaign_id?: number | null
           customer_id?: number
           date?: string
-          discount_pct?: number | null
-          order_id?: string
+          price?: number
           product_id?: number
-          quantity?: number | null
-          revenue_nok?: number | null
-          sale_type?: string | null
-          unit_price?: number | null
+          quantity?: number
+          revenue?: number
+          subscription_flag?: boolean
+          transaction_id?: number
         }
         Relationships: [
           {
-            foreignKeyName: "fact_transactions_campaign_id_fkey"
+            foreignKeyName: "fk_txn_campaign"
             columns: ["campaign_id"]
             isOneToOne: false
-            referencedRelation: "dim_campaign"
+            referencedRelation: "campaigns"
             referencedColumns: ["campaign_id"]
           },
           {
-            foreignKeyName: "fact_transactions_customer_id_fkey"
+            foreignKeyName: "fk_txn_customer"
             columns: ["customer_id"]
             isOneToOne: false
-            referencedRelation: "dim_customer"
+            referencedRelation: "customers"
             referencedColumns: ["customer_id"]
           },
           {
-            foreignKeyName: "fact_transactions_product_id_fkey"
+            foreignKeyName: "fk_txn_product"
             columns: ["product_id"]
             isOneToOne: false
-            referencedRelation: "dim_product"
+            referencedRelation: "products"
             referencedColumns: ["product_id"]
           },
         ]

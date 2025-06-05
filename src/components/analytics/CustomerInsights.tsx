@@ -13,7 +13,7 @@ const CustomerInsights = () => {
     queryKey: ['customers-data'],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from('dim_customer')
+        .from('customers')
         .select('*');
 
       if (error) throw error;
@@ -21,33 +21,33 @@ const CustomerInsights = () => {
     }
   });
 
-  // Fetch customer segments
-  const { data: segmentData } = useQuery({
-    queryKey: ['customer-segments'],
+  // Fetch customer transaction data
+  const { data: customerRevenue } = useQuery({
+    queryKey: ['customer-revenue'],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from('fact_transactions')
+        .from('transactions')
         .select(`
-          revenue_nok,
-          dim_customer(acquisition_channel)
+          revenue,
+          customers(country)
         `);
 
       if (error) throw error;
 
-      // Group by acquisition channel
-      const segmentStats = data.reduce((acc: any, transaction: any) => {
-        const channel = transaction.dim_customer?.acquisition_channel || 'Unknown';
-        if (!acc[channel]) {
-          acc[channel] = {
-            segment: channel,
+      // Group by country
+      const countryStats = data.reduce((acc: any, transaction: any) => {
+        const country = transaction.customers?.country || 'Unknown';
+        if (!acc[country]) {
+          acc[country] = {
+            country,
             sales: 0
           };
         }
-        acc[channel].sales += parseFloat(transaction.revenue_nok || 0);
+        acc[country].sales += parseFloat(transaction.revenue || 0);
         return acc;
       }, {});
 
-      return Object.values(segmentStats);
+      return Object.values(countryStats);
     }
   });
 
@@ -56,25 +56,25 @@ const CustomerInsights = () => {
     queryKey: ['customer-geography'],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from('dim_customer')
-        .select('region');
+        .from('customers')
+        .select('country');
 
       if (error) throw error;
 
-      // Group by region
-      const regionStats = data.reduce((acc: any, customer: any) => {
-        const region = customer.region || 'Unknown';
-        if (!acc[region]) {
-          acc[region] = {
-            region,
+      // Group by country
+      const countryStats = data.reduce((acc: any, customer: any) => {
+        const country = customer.country || 'Unknown';
+        if (!acc[country]) {
+          acc[country] = {
+            country,
             count: 0
           };
         }
-        acc[region].count += 1;
+        acc[country].count += 1;
         return acc;
       }, {});
 
-      return Object.values(regionStats);
+      return Object.values(countryStats);
     }
   });
 
@@ -99,43 +99,43 @@ const CustomerInsights = () => {
         </Card>
         <Card>
           <CardHeader>
-            <CardTitle>Acquisition Channels</CardTitle>
+            <CardTitle>Active Customers</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-3xl font-bold">{new Set(customers?.map(c => c.acquisition_channel)).size || 0}</div>
+            <div className="text-3xl font-bold">{customers?.filter(c => c.is_active).length || 0}</div>
           </CardContent>
         </Card>
         <Card>
           <CardHeader>
-            <CardTitle>Regions</CardTitle>
+            <CardTitle>Countries</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-3xl font-bold">{new Set(customers?.map(c => c.region)).size || 0}</div>
+            <div className="text-3xl font-bold">{new Set(customers?.map(c => c.country)).size || 0}</div>
           </CardContent>
         </Card>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Customer Acquisition Channels */}
+        {/* Customer Revenue by Country */}
         <Card>
           <CardHeader>
-            <CardTitle>Revenue by Acquisition Channel</CardTitle>
-            <CardDescription>Revenue by customer acquisition channel</CardDescription>
+            <CardTitle>Revenue by Country</CardTitle>
+            <CardDescription>Revenue distribution by customer country</CardDescription>
           </CardHeader>
           <CardContent>
             <ResponsiveContainer width="100%" height={300}>
               <PieChart>
                 <Pie
-                  data={segmentData}
+                  data={customerRevenue}
                   cx="50%"
                   cy="50%"
                   labelLine={false}
-                  label={({ segment, percent }: any) => `${segment} ${(percent * 100).toFixed(0)}%`}
+                  label={({ country, percent }: any) => `${country} ${(percent * 100).toFixed(0)}%`}
                   outerRadius={80}
                   fill="#8884d8"
                   dataKey="sales"
                 >
-                  {segmentData?.map((entry: any, index: number) => (
+                  {customerRevenue?.map((entry: any, index: number) => (
                     <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                   ))}
                 </Pie>
@@ -149,13 +149,13 @@ const CustomerInsights = () => {
         <Card>
           <CardHeader>
             <CardTitle>Geographic Distribution</CardTitle>
-            <CardDescription>Customers by region</CardDescription>
+            <CardDescription>Customers by country</CardDescription>
           </CardHeader>
           <CardContent>
             <ResponsiveContainer width="100%" height={300}>
               <BarChart data={geoData}>
                 <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="region" />
+                <XAxis dataKey="country" />
                 <YAxis />
                 <Tooltip />
                 <Bar dataKey="count" fill="#82ca9d" />
@@ -176,30 +176,28 @@ const CustomerInsights = () => {
               <thead>
                 <tr className="border-b">
                   <th className="text-left p-2">Customer ID</th>
-                  <th className="text-left p-2">Acquisition Channel</th>
-                  <th className="text-left p-2">Gender</th>
-                  <th className="text-left p-2">Age Band</th>
-                  <th className="text-left p-2">Region</th>
+                  <th className="text-left p-2">Country</th>
+                  <th className="text-left p-2">Status</th>
                   <th className="text-left p-2">Signup Date</th>
+                  <th className="text-left p-2">Subscription Start</th>
                 </tr>
               </thead>
               <tbody>
                 {customers?.map((customer: any) => (
                   <tr key={customer.customer_id} className="border-b">
                     <td className="p-2 font-medium">{customer.customer_id}</td>
-                    <td className="p-2">{customer.acquisition_channel}</td>
-                    <td className="p-2">{customer.gender}</td>
+                    <td className="p-2">{customer.country}</td>
                     <td className="p-2">
                       <span className={`px-2 py-1 rounded-full text-xs ${
-                        customer.age_band === '25-34' ? 'bg-purple-100 text-purple-800' :
-                        customer.age_band === '35-44' ? 'bg-blue-100 text-blue-800' :
-                        'bg-gray-100 text-gray-800'
+                        customer.is_active ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
                       }`}>
-                        {customer.age_band}
+                        {customer.is_active ? 'Active' : 'Inactive'}
                       </span>
                     </td>
-                    <td className="p-2">{customer.region}</td>
                     <td className="p-2">{new Date(customer.signup_date).toLocaleDateString()}</td>
+                    <td className="p-2">
+                      {customer.subscription_start ? new Date(customer.subscription_start).toLocaleDateString() : 'N/A'}
+                    </td>
                   </tr>
                 ))}
               </tbody>

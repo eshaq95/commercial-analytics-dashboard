@@ -15,13 +15,13 @@ const Dashboard = () => {
     queryKey: ['dashboard-metrics'],
     queryFn: async () => {
       const [salesResult, customersResult, productsResult] = await Promise.all([
-        supabase.from('fact_transactions').select('revenue_nok'),
-        supabase.from('dim_customer').select('customer_id', { count: 'exact' }),
-        supabase.from('dim_product').select('product_id', { count: 'exact' })
+        supabase.from('transactions').select('revenue'),
+        supabase.from('customers').select('customer_id', { count: 'exact' }),
+        supabase.from('products').select('product_id', { count: 'exact' })
       ]);
 
       const totalSales = salesResult.data?.reduce((sum, transaction) => 
-        sum + (parseFloat(transaction.revenue_nok || '0')), 0) || 0;
+        sum + (parseFloat(transaction.revenue?.toString() || '0')), 0) || 0;
 
       return {
         totalSales,

@@ -11,7 +11,7 @@ const SalesOverview = () => {
     queryKey: ['sales-overview'],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from('fact_transactions')
+        .from('transactions')
         .select('*')
         .order('date');
 
@@ -29,7 +29,7 @@ const SalesOverview = () => {
             orders: 0
           };
         }
-        acc[month].sales += parseFloat(transaction.revenue_nok || 0);
+        acc[month].sales += parseFloat(transaction.revenue || 0);
         acc[month].quantity += parseInt(transaction.quantity || 0);
         acc[month].orders += 1;
         return acc;
@@ -44,19 +44,19 @@ const SalesOverview = () => {
     queryKey: ['top-products'],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from('fact_transactions')
+        .from('transactions')
         .select(`
-          revenue_nok,
+          revenue,
           quantity,
-          dim_product(product_name)
+          products(product_name)
         `)
-        .order('revenue_nok', { ascending: false });
+        .order('revenue', { ascending: false });
 
       if (error) throw error;
 
       // Group by product
       const productData = data.reduce((acc: any, transaction: any) => {
-        const productName = transaction.dim_product?.product_name || 'Unknown';
+        const productName = transaction.products?.product_name || 'Unknown';
         if (!acc[productName]) {
           acc[productName] = {
             product: productName,
@@ -64,7 +64,7 @@ const SalesOverview = () => {
             quantity: 0
           };
         }
-        acc[productName].sales += parseFloat(transaction.revenue_nok || 0);
+        acc[productName].sales += parseFloat(transaction.revenue || 0);
         acc[productName].quantity += parseInt(transaction.quantity || 0);
         return acc;
       }, {});

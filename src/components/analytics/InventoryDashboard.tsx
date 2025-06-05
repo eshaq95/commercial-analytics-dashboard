@@ -2,52 +2,31 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
-import { Loader2, AlertTriangle } from "lucide-react";
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, LineChart, Line } from 'recharts';
+import { Loader2, TrendingUp, Users, UserCheck } from "lucide-react";
 
 const InventoryDashboard = () => {
-  // Fetch inventory data
-  const { data: inventory, isLoading } = useQuery({
-    queryKey: ['inventory-data'],
+  // Fetch subscription KPIs data
+  const { data: subscriptionKpis, isLoading } = useQuery({
+    queryKey: ['subscription-kpis'],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from('fact_inventory_daily')
-        .select(`
-          *,
-          dim_product(product_name, category, price_nok)
-        `)
-        .order('inventory_date', { ascending: false });
+        .from('subscription_kpis')
+        .select('*')
+        .order('month', { ascending: true });
 
       if (error) throw error;
-      return data;
+      
+      // Format data for charts
+      return data.map(item => ({
+        ...item,
+        month: new Date(item.month).toLocaleDateString('default', { month: 'short', year: 'numeric' })
+      }));
     }
   });
 
-  // Calculate inventory metrics
-  const inventoryMetrics = inventory ? {
-    totalQuantity: inventory.reduce((sum, item) => sum + (item.stock_level || 0), 0),
-    totalValue: inventory.reduce((sum, item) => sum + ((item.stock_level || 0) * (item.dim_product?.price_nok || 0)), 0),
-    lowStockItems: inventory.filter(item => item.stock_level <= 10).length
-  } : { totalQuantity: 0, totalValue: 0, lowStockItems: 0 };
-
-  // Group inventory by category
-  const categoryInventory = inventory ? inventory.reduce((acc: any, item: any) => {
-    const category = item.dim_product?.category || 'Unknown';
-    if (!acc[category]) {
-      acc[category] = {
-        category,
-        quantity: 0,
-        value: 0,
-        items: 0
-      };
-    }
-    acc[category].quantity += item.stock_level || 0;
-    acc[category].value += (item.stock_level || 0) * (item.dim_product?.price_nok || 0);
-    acc[category].items += 1;
-    return acc;
-  }, {}) : {};
-
-  const categoryData = Object.values(categoryInventory);
+  // Calculate latest metrics
+  const latestMetrics = subscriptionKpis && subscriptionKpis.length > 0 ? subscriptionKpis[subscriptionKpis.length - 1] : null;
 
   if (isLoading) {
     return (
@@ -59,94 +38,128 @@ const InventoryDashboard = () => {
 
   return (
     <div className="space-y-6">
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
         <Card>
-          <CardHeader>
-            <CardTitle>Total Inventory Value</CardTitle>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Active Subscribers</CardTitle>
+            <Users className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-3xl font-bold">{inventoryMetrics.totalValue.toLocaleString()} NOK</div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader>
-            <CardTitle>Total Stock Quantity</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-3xl font-bold">{inventoryMetrics.totalQuantity.toLocaleString()}</div>
+            <div className="text-2xl font-bold">{latestMetrics?.active_subscribers?.toLocaleString() || '0'}</div>
           </CardContent>
         </Card>
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle>Low Stock Alerts</CardTitle>
-            <AlertTriangle className="h-4 w-4 text-orange-500" />
+            <CardTitle className="text-sm font-medium">New Subscribers</CardTitle>
+            <UserCheck className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-3xl font-bold text-orange-600">{inventoryMetrics.lowStockItems}</div>
+            <div className="text-2xl font-bold">{latestMetrics?.new_subscribers?.toLocaleString() || '0'}</div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Churn Rate</CardTitle>
+            <TrendingUp className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{((latestMetrics?.churn_rate || 0) * 100).toFixed(1)}%</div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Monthly Recurring Revenue</CardTitle>
+            <TrendingUp className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">${latestMetrics?.mrr?.toLocaleString() || '0'}</div>
           </CardContent>
         </Card>
       </div>
 
-      {/* Inventory by Category */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Inventory by Category</CardTitle>
-          <CardDescription>Stock levels across product categories</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <ResponsiveContainer width="100%" height={300}>
-            <BarChart data={categoryData}>
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="category" />
-              <YAxis />
-              <Tooltip />
-              <Legend />
-              <Bar dataKey="quantity" fill="#8884d8" name="Quantity" />
-              <Bar dataKey="value" fill="#82ca9d" name="Value (NOK)" />
-            </BarChart>
-          </ResponsiveContainer>
-        </CardContent>
-      </Card>
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Subscriber Growth */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Subscriber Growth</CardTitle>
+            <CardDescription>Active subscribers over time</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <ResponsiveContainer width="100%" height={300}>
+              <LineChart data={subscriptionKpis}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="month" />
+                <YAxis />
+                <Tooltip />
+                <Legend />
+                <Line 
+                  type="monotone" 
+                  dataKey="active_subscribers" 
+                  stroke="#8884d8" 
+                  strokeWidth={2}
+                  name="Active Subscribers"
+                />
+                <Line 
+                  type="monotone" 
+                  dataKey="new_subscribers" 
+                  stroke="#82ca9d" 
+                  strokeWidth={2}
+                  name="New Subscribers"
+                />
+              </LineChart>
+            </ResponsiveContainer>
+          </CardContent>
+        </Card>
 
-      {/* Inventory Table */}
+        {/* MRR Growth */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Monthly Recurring Revenue</CardTitle>
+            <CardDescription>MRR trend over time</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <ResponsiveContainer width="100%" height={300}>
+              <BarChart data={subscriptionKpis}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="month" />
+                <YAxis />
+                <Tooltip formatter={(value: any) => [`$${value.toLocaleString()}`, 'MRR']} />
+                <Bar dataKey="mrr" fill="#8884d8" name="MRR" />
+              </BarChart>
+            </ResponsiveContainer>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Subscription KPIs Table */}
       <Card>
         <CardHeader>
-          <CardTitle>Inventory Details</CardTitle>
+          <CardTitle>Subscription Metrics Details</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b">
-                  <th className="text-left p-2">Product</th>
-                  <th className="text-left p-2">Category</th>
-                  <th className="text-right p-2">Stock Level</th>
-                  <th className="text-right p-2">Unit Price (NOK)</th>
-                  <th className="text-right p-2">Total Value (NOK)</th>
-                  <th className="text-center p-2">Status</th>
+                  <th className="text-left p-2">Month</th>
+                  <th className="text-right p-2">Active Subscribers</th>
+                  <th className="text-right p-2">New Subscribers</th>
+                  <th className="text-right p-2">Churned</th>
+                  <th className="text-right p-2">Churn Rate</th>
+                  <th className="text-right p-2">MRR</th>
                 </tr>
               </thead>
               <tbody>
-                {inventory?.map((item: any, index: number) => {
-                  const isLowStock = item.stock_level <= 10;
-                  const totalValue = (item.stock_level || 0) * (item.dim_product?.price_nok || 0);
-                  return (
-                    <tr key={index} className="border-b">
-                      <td className="p-2 font-medium">{item.dim_product?.product_name || 'Unknown'}</td>
-                      <td className="p-2">{item.dim_product?.category || 'Unknown'}</td>
-                      <td className="p-2 text-right">{item.stock_level}</td>
-                      <td className="p-2 text-right">{item.dim_product?.price_nok}</td>
-                      <td className="p-2 text-right">{totalValue.toLocaleString()}</td>
-                      <td className="p-2 text-center">
-                        <span className={`px-2 py-1 rounded-full text-xs ${
-                          isLowStock ? 'bg-red-100 text-red-800' : 'bg-green-100 text-green-800'
-                        }`}>
-                          {isLowStock ? 'Low Stock' : 'In Stock'}
-                        </span>
-                      </td>
-                    </tr>
-                  );
-                })}
+                {subscriptionKpis?.map((row: any, index: number) => (
+                  <tr key={index} className="border-b">
+                    <td className="p-2 font-medium">{row.month}</td>
+                    <td className="p-2 text-right">{row.active_subscribers.toLocaleString()}</td>
+                    <td className="p-2 text-right">{row.new_subscribers.toLocaleString()}</td>
+                    <td className="p-2 text-right">{row.churned_subscribers.toLocaleString()}</td>
+                    <td className="p-2 text-right">{(row.churn_rate * 100).toFixed(1)}%</td>
+                    <td className="p-2 text-right">${row.mrr.toLocaleString()}</td>
+                  </tr>
+                ))}
               </tbody>
             </table>
           </div>
