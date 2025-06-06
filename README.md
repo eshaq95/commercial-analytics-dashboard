@@ -1,73 +1,87 @@
-# Welcome to your Lovable project
+# 💼 GoodForMe – Commercial Analytics Dashboard (Tableau)
 
-## Project info
+This repository showcases a complete analytics suite built for a fictional wellness brand, **GoodForMe**, focused on KPI monitoring and campaign performance analysis.
 
-**URL**: https://lovable.dev/projects/8d30e354-e16b-4241-8ff3-041724a86526
+---
 
-## How can I edit this code?
+## 📊 Project Overview
 
-There are several ways of editing your application.
+This Tableau project was designed to replicate the kind of reporting and commercial insight work a Graduate Business Analyst might deliver for a direct-to-consumer subscription business.
 
-**Use Lovable**
+It features:
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/8d30e354-e16b-4241-8ff3-041724a86526) and start prompting.
+- 📈 **Executive Dashboard**:  
+  - MRR, Active Subscribers, Churn Rate, and Net Revenue
+  - Dual-axis MRR vs. Revenue trend
+  - Revenue split by subscription type
 
-Changes made via Lovable will be committed automatically to this repo.
+- 🎯 **Campaign Performance Dashboard**:  
+  - Revenue by Campaign
+  - ROI Scatter Plot (Marketing Cost vs. Return)
+  - Campaign Timeline (Gantt Chart)
 
-**Use your preferred IDE**
+---
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
+## 🛠 Stack
 
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
+This project was built using:
 
-Follow these steps:
+| Layer         | Tools                              |
+|---------------|-------------------------------------|
+| 📦 Data Layer | PostgreSQL (Supabase)               |
+| 🔧 ETL        | Python (synthetic data generation)  |
+| 📈 BI Layer   | Tableau (Desktop & Public)          |
 
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
+---
 
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
+## 📁 Data Model
 
-# Step 3: Install the necessary dependencies.
-npm i
+Synthetic data was generated for:
 
-# Step 4: Start the development server with auto-reloading and an instant preview.
-npm run dev
-```
+- `transactions.csv`
+- `customers.csv`
+- `products.csv`
+- `campaigns.csv`
+- `subscription_kpis.csv`
 
-**Edit a file directly in GitHub**
+All were imported into Supabase and structured using a star-schema model. Key views were created to enable smooth joining inside Tableau (e.g. monthly grain alignment, surrogate keys).
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+---
 
-**Use GitHub Codespaces**
+## 🌐 Live Demo / Screenshots
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+> 📷 [Insert screenshots here or link to Tableau Public dashboard if available]
 
-## What technologies are used for this project?
+---
 
-This project is built with:
+## 📌 Key Features
 
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
+- Designed around GoodForMe’s job description for a Graduate Business Analyst
+- Demonstrates both descriptive and analytical dashboarding
+- Includes calculated fields for:
+  - Net Revenue
+  - ROI
+  - LTV
+  - Churn Rate
+  - YoY MRR delta
 
-## How can I deploy this project?
+---
 
-Simply open [Lovable](https://lovable.dev/projects/8d30e354-e16b-4241-8ff3-041724a86526) and click on Share -> Publish.
+## 🚀 Next Steps (Planned)
 
-## Can I connect a custom domain to my Lovable project?
+- Cohort retention heatmap
+- Churn prediction scorecards
+- Embedded analytics with Supabase + React
 
-Yes, you can!
+---
 
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
+## 🔗 Related Links
 
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/tips-tricks/custom-domain#step-by-step-guide)
+- [Tableau Dashboard (if public)](https://public.tableau.com/app/profile/yourusername/viz/GoodForMeDashboard)
+- [Lovable Frontend (Address Form Companion)](https://lovable.dev/projects/8d30e354-e16b-4241-8ff3-041724a86526)
+
+---
+
+## 📄 License
+
+This project is for educational and demonstration purposes only.
