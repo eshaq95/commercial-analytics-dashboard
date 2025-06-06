@@ -50,7 +50,10 @@ All were imported into Supabase and structured using a star-schema model. Key vi
 
 ## 🌐 Live Demo / Screenshots
 
-> 📷 [Insert screenshots here or link to Tableau Public dashboard if available]
+
+![Executive Dashboard](https://github.com/user-attachments/assets/b28ae926-0f36-45b7-8aa1-b9b4402d0f27)
+![Campaign Performance Dashboard](https://github.com/user-attachments/assets/75348eb8-08bd-4abc-8f26-8d65675d47a5)
+
 
 ---
 
