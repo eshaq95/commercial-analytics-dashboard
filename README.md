@@ -78,12 +78,6 @@ All were imported into Supabase and structured using a star-schema model. Key vi
 
 ---
 
-## 🔗 Related Links
-
-- [Tableau Dashboard (if public)](https://public.tableau.com/app/profile/yourusername/viz/GoodForMeDashboard)
-- [Lovable Frontend (Address Form Companion)](https://lovable.dev/projects/8d30e354-e16b-4241-8ff3-041724a86526)
-
----
 
 ## 📄 License
 
