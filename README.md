@@ -1,4 +1,4 @@
-# 💼 GoodForMe – Commercial Analytics Dashboard (Tableau)
+# 💼 GoodForMe – Analytics Dashboard (Tableau)
 
 This repository showcases a complete analytics suite built for a fictional wellness brand, **GoodForMe**, focused on KPI monitoring and campaign performance analysis.
 
